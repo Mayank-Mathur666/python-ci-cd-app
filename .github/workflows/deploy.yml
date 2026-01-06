@@ -1,0 +1,29 @@
+name: Python CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Build Docker Image
+      run: docker build -t python-app .
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          docker stop python-app || true
+          docker rm python-app || true
+          docker build -t python-app .
+          docker run -d -p 80:5000 --name python-app python-app
